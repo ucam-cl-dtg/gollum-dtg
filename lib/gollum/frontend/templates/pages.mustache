@@ -1,4 +1,21 @@
 <div id="wiki-wrapper" class="results">
+<div id="cl-header"> 
+     <div id="branding">
+          <a accesskey="1" href="http://www.cam.ac.uk/">
+             <img alt="University of Cambridge" class="ucam" src="/images/identifier.gif" />
+             <img alt="DTG-Wiki" src="/images/dtg-wiki.gif" />
+          </a> 
+     </div>
+     <div id="usermenu">
+          {{#loggedin}}
+          Welcome, {{username}} <a href="logout">logout</a>
+          {{/loggedin}}
+          {{#guest_mode}}
+          Raven <a href="login">login</a>
+          {{/guest_mode}}
+     </div>
+</div>
+<div id="split"></div>
 <div id="head" style="border:none;">
   <h1>{{title}}</h1>
   <ul class="actions">

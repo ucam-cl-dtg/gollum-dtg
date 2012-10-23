@@ -28,6 +28,18 @@ module Precious
       def editable
         @editable
       end
+      
+      def guest_mode
+        !@loggedin
+      end
+      
+      def loggedin
+      	@loggedin
+      end
+      
+      def username
+      	@username
+      end
 
       def has_header
         @header = (@page.header || false) if @header.nil?

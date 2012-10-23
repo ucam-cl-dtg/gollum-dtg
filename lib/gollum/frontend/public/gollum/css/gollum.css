@@ -14,14 +14,19 @@
 body, html {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 10px;
-  margin: 0;
+  margin: 0 0 7em;
   padding: 0;
+  background-color:#BDBDBD;
 }
 
 #wiki-wrapper {
   margin: 0 auto;
   overflow: visible;
-  width: 80%;
+  width: 82%;
+  background-color: white;
+  border-style:none solid solid solid;
+  border-width:1px;
+  border-color:#9E9E9E;
 }
 
 a:link {
@@ -38,16 +43,16 @@ a:hover, a:visited {
 /* @section head */
 #head {
   border-bottom: 1px solid #ddd;
-  margin: 4em 0 1.5em;
-  padding-bottom: 0.3em;
+  margin: 0.5em 0 0.5em;
   overflow: hidden;
+  padding:10px;
 }
 
 #head h1 {
   font-size: 33px;
   float: left;
   line-height: normal;
-  margin: 0;
+  margin-left: 10px;
   padding: 2px 0 0 0;
 }
 
@@ -59,6 +64,9 @@ a:hover, a:visited {
 #wiki-content {
   height: 1%;
   overflow: visible;
+  padding:10px;
+}
+
 }
 
 #wiki-content .wrap {
@@ -71,12 +79,12 @@ a:hover, a:visited {
   display: none; /* todo */
 }
 
-/* @section body */
-#wiki-body {
-  display: block;
-  float: left;
-  clear: left;
-  margin-right: 3%;
+  /* @section body */
+  #wiki-body {
+    display: block;
+    float: right;
+    margin-left: 10px;
+    margin-right: 3%;
   margin-bottom: 40px;
   width: 100%;
 }
@@ -103,15 +111,16 @@ a:hover, a:visited {
   border: none;
 }
 
-/* @section rightbar */
-#wiki-rightbar {
-  background-color: #f7f7f7;
-  border: 1px solid #ddd;
-  font-size: 13px;
-  float: right;
-  padding: 7px;
-  width: 25%;
-  color: #555;
+  /* @section rightbar */
+  #wiki-rightbar {
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    float: left;
+    padding: 7px 7px 7px 15px;
+    margin-bottom: 10px;
+    width: 25%;
+    color: #555;
 
   border-radius: 0.5em;
   -moz-border-radius: 0.5em;
@@ -123,7 +132,7 @@ a:hover, a:visited {
 }
 
 #wiki-rightbar > p:first-child {
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 #wiki-rightbar p.parent {
@@ -139,6 +148,37 @@ a:hover, a:visited {
   color: #666;
   content: "← ";
 }
+
+    #wiki-rightbar h3 {
+      font-size: 1.2em;
+      color: #333;
+      margin: 1.2em 0 0;
+      padding: 0;
+      text-shadow: 0 1px 0 #fff;
+    }
+
+    #wiki-rightbar ul {
+      margin: 3px 0 0 0;
+      padding: 0;
+    }
+
+    #wiki-rightbar ul li {
+      color: #bbb;
+      margin: 0 0 0 1em;
+      padding: 0;
+      line-height: 1.75em;
+      list-style-position: inside;
+      list-style-type: round;
+    }
+
+    #wiki-rightbar #nav ul li a {
+      font-weight: bold;
+      text-shadow: 0 1px 0 #fff;
+    }
+    
+    .toc ul {
+	  background-color: white;
+    }
 
 /* @section footer */
 
@@ -214,8 +254,9 @@ a:hover, a:visited {
 /* @section page-footer */
 .page #footer {
   clear: both;
-  border-top: 1px solid #ddd;
-  margin: 1em 0 7em;
+    border-top: 1px solid #ddd;
+    margin: 1em 0 1em;
+    padding:10px;
 }
 
 #footer p#last-edit {
@@ -346,7 +387,7 @@ a:hover, a:visited {
 
 .history #wiki-history ul.actions li,
 .history #footer ul.actions li {
-  margin: 0 0.6em 0 0;
+  margin: 0 0.6em 0 1em;
 }
 
 
@@ -379,10 +420,10 @@ a:hover, a:visited {
   padding-bottom: 2em;
 }
 
-.results #results ul {
-  margin: 2em 0 0 0;
-  padding: 0;
-}
+  .results #results ul {
+    margin: 2em 0 0 4em;
+    padding: 0;
+  }
 
 .results #results ul li {
   font-size: 1.2em;
@@ -401,9 +442,10 @@ a:hover, a:visited {
   margin-top: 2em;
 }
 
-.results #footer ul.actions li {
-  margin: 0 1em 0 0;
-}
+  .results #footer ul.actions li {
+    margin: 0 1em 0 0;
+    padding:0px 15px 15px;
+  }
 
 
 /* @section compare */
@@ -461,7 +503,7 @@ a:hover, a:visited {
 
 .compare #compare-content ul.actions li,
 .compare #footer ul.actions li {
-  margin-left: 0;
+  margin-left: 1em;
   margin-right: 0.6em;
 }
 
@@ -501,7 +543,7 @@ ul.actions {
    display: block;
    list-style-type: none;
    overflow: hidden;
-   padding: 0;
+   padding: 0px;
 }
 
  ul.actions li {
@@ -712,5 +754,69 @@ ul.actions {
   border-bottom: 1px solid #ddd;
   margin: 1em 0;
   padding: 0.25em;
+}
+
+/* gollum@DTG-CL */
+#cl-header{
+    overflow: hidden;
+    padding:10px;
+}
+#branding{
+    float:left;
+}
+#usermenu{
+    float:right;
+    margin-top:15px;
+    font-weight:bold;
+}
+#split{
+    height:2px;
+    background-color:#BDBDBD;
+    margin-bottom:10px;
+}
+
+ul#nav-breadcrumb {
+	overflow: hidden;
+	margin: 0 0 0 10px;
+	padding: 0;
+	list-style-type: none;
+	color: #666;
+	font-size: 0.8em;
+} 
+
+ul#nav-breadcrumb li {
+	float: left;
+	padding: 0 10px 0 11px;
+	background: url(../images/icon-arrow-nav-breadcrumb.gif) no-repeat 0 50%;
+}
+
+ul#nav-breadcrumb li.first {
+	background:none;
+	padding-left:0;
+}
+
+ul#nav-breadcrumb li.first a {
+	padding-left: 21px;
+	background: url(../images/icon-home.gif) no-repeat 0 0;
+}
+
+ul#nav-breadcrumb li.last {
+	/*background: none;*/
+}
+/*
+ul#nav-breadcrumb li.first a {
+	color: #cf5200;
+}
+*/
+ul#nav-breadcrumb a {
+	text-decoration: none;
+}
+
+ul#nav-breadcrumb a:hover {
+	text-decoration: underline;
+}
+
+ul#nav-breadcrumb a:visited  {
+	color: #003c79;
 }
 

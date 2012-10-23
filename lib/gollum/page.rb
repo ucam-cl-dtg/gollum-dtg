@@ -43,7 +43,7 @@ module Gollum
     # Returns the matching String basename of the file without the extension.
     def self.valid_page_name?(filename)
       match = valid_filename?(filename)
-      filename =~ /^_/ ? false : match
+      filename =~ /^_/ ? match : match
     end
 
     # Public: The format of a given filename.

@@ -14,6 +14,14 @@ module Precious
       def title
         "#{@page.title}"
       end
+      
+      def loggedin
+      	@loggedin
+      end
+      
+      def username
+      	@username
+      end
 
       def page_name
         @name.gsub('-', ' ')

@@ -1,4 +1,5 @@
 require 'cgi'
+require 'gollum/frontend/raven.rb'
 require 'sinatra'
 require 'gollum'
 require 'mustache/sinatra'
@@ -39,6 +40,7 @@ module Precious
     include Precious::Helpers
 
     dir = File.dirname(File.expand_path(__FILE__))
+    enable :sessions
 
     # Detect unsupported browsers.
     Browser = Struct.new(:browser, :version)
@@ -79,6 +81,79 @@ module Precious
     configure :test do
       enable :logging, :raise_errors, :dump_errors
     end
+    
+    helpers do
+	  def protected!
+		unless authorized?
+			raven = Raven.new
+			raven.return_url = request.base_url + '/callback'
+			raven.description = 'DTG Gollum Wiki'
+			
+			message = 'the DTG Wiki page you are trying to access requires authorization'
+			if(session['principal']==nil)
+				raven_req_url = raven.get_raven_request(session, message, 'yes')
+			else
+				raven_req_url = raven.get_raven_request(session, message, 'no')
+			end
+			session['redirect-url'] = request.url
+			session['raven'] = raven
+
+			redirect raven_req_url
+		end
+	  end
+
+	  def authorized?
+		is_login = 0
+		if Raven::check_session(session,'no')
+			@loggedin = true
+		    @username = session['principal']
+			is_login = 1
+		else
+			@loggedin = false
+			@username = nil
+			is_login = 0
+		end
+		
+		if request.path_info=='/' || request.path_info == '/Home'
+			return true
+		end
+		
+		if is_login == 1
+			return true
+		else
+			return false
+		end
+	  end
+
+	end
+
+
+	get '/login' do
+		protected!
+	    redirect '/'
+    end
+    
+    get '/logout' do
+       	session['principal'] = nil
+       	session['gollum.author'] = nil
+    	@loggedin=false
+    	redirect '/'
+    end
+    
+    get '/callback' do
+    	raven = session['raven']
+    	rc = raven.check_response_from_raven(params,session,'no')
+    	if rc == 200
+			@loggedin = true
+			@username = session['principal']
+			gollum_author = { :name => @username, :email => @username+'@cam.ac.uk' }
+			session['gollum.author'] = gollum_author
+			redirect session['redirect-url']
+    	else
+    	   "Raven authentication failed: "+rc
+    	end
+    	
+    end
 
     before do
       @base_url = url('/', false).chomp('/')
@@ -86,6 +161,7 @@ module Precious
     end
 
     get '/' do
+	  protected!
       redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, 'Home')
     end
 
@@ -117,6 +193,7 @@ module Precious
     end
 
     get '/edit/*' do
+      protected!
       wikip = wiki_page(params[:splat].first)
       @name = wikip.name
       @path = wikip.path
@@ -141,6 +218,7 @@ module Precious
     end
 
     post '/edit/*' do
+      protected!
       path      = '/' + clean_url(sanitize_empty_params(params[:path])).to_s
       page_name = CGI.unescape(params[:page])
       wiki      = wiki_new
@@ -339,6 +417,7 @@ module Precious
     end
 
     get '/*' do
+      protected!
       show_page_or_file(params[:splat].first)
     end
 
