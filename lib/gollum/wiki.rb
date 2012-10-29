@@ -177,7 +177,7 @@ module Gollum
         self.class.default_ws_subs
       @history_sanitization = options[:history_sanitization] ||
         self.class.history_sanitization
-      @live_preview  = options.fetch(:live_preview, true)
+      @live_preview  = options.fetch(:live_preview, false)
       @universal_toc = options.fetch(:universal_toc, false)
       @mathjax = options[:mathjax] || false
       @show_all = options[:show_all] || false
