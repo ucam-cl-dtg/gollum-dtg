@@ -179,7 +179,7 @@ module Gollum
         self.class.history_sanitization
       @live_preview  = options.fetch(:live_preview, false)
       @universal_toc = options.fetch(:universal_toc, false)
-      @mathjax = options[:mathjax] || false
+      @mathjax = options[:mathjax] || true
       @show_all = options[:show_all] || false
     end
 
