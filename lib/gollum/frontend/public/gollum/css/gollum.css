@@ -130,6 +130,7 @@ a:hover, a:visited {
 
 #wiki-rightbar p {
   margin: 13px 0 0;
+  display: inline;
 }
 
 #wiki-rightbar > p:first-child {
