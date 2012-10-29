@@ -376,6 +376,12 @@ a.absent {
   margin: 0;
   border-radius: 3px;
 }
+
+.toc.stick{
+  top: 10px;
+  position: fixed;
+}
+
 .toc-title {
   color: #888;
   font-size: 14px;

@@ -5,6 +5,23 @@ Mousetrap.bind(['e'], function( e ) {
   return false;
 });
 </script>
+{{#has_sidebar}}
+<script type="text/javascript">
+function sticky_relocate() {
+  var window_top = $(window).scrollTop();
+  var div_top = $('#sticky-anchor').offset().top;
+  if (window_top > div_top)
+    $('#sidebar-content .toc').addClass('stick')
+  else
+    $('#sidebar-content .toc').removeClass('stick');
+  }
+
+$(function() {
+  $(window).scroll(sticky_relocate);
+  sticky_relocate();
+  });
+</script>
+{{/has_sidebar}}
 <div id="wiki-wrapper" class="page">
 <div id="cl-header"> 
      <div id="branding">
@@ -28,7 +45,6 @@ Mousetrap.bind(['e'], function( e ) {
 		<li class="first"><a href="http://www.cl.cam.ac.uk/">Computer Laboratory</a></li>
 		<li><a href="http://www.cl.cam.ac.uk/research/dtg/www/./">Digital Technology Group</a></li>
 		<li><a href="http://localhost">Wiki</a></li>
-		<li><a href="http://localhost">lc525</a></li>
 	</ul>
 </div>
 <div id="head">
@@ -67,6 +83,7 @@ Mousetrap.bind(['e'], function( e ) {
     <div id="sidebar-content" class="markdown-body">
       {{{sidebar_content}}}
     </div>
+    <div id="sticky-anchor"></div>
   </div>
   {{/has_sidebar}}
   <div id="wiki-body" class="gollum-{{format}}-content">
