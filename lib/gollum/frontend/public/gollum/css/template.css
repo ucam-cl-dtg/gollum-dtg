@@ -393,10 +393,12 @@ a.absent {
   font-size: 17px;
 }
 .toc ul ul {
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: bold;
 }
 .toc ul ul ul {
   font-size: 14px;
+  font-weight: normal
 }
 .toc ul li{
   margin: 0;

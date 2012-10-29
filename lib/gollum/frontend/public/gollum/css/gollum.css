@@ -79,18 +79,18 @@ a:hover, a:visited {
   display: none; /* todo */
 }
 
-  /* @section body */
-  #wiki-body {
-    display: block;
-    float: right;
-    margin-left: 10px;
-    margin-right: 3%;
+/* @section body */
+#wiki-body {
+  display: block;
+  margin-left: 20px;
+  margin-right: 3%;
   margin-bottom: 40px;
-  width: 100%;
 }
 
 .has-rightbar #wiki-body {
-  width: 68%;
+  /*width: 88%;*/
+  /*float: right;*/
+  margin-left: 320px;
 }
 
 /* @section toc */
@@ -119,7 +119,8 @@ a:hover, a:visited {
     float: left;
     padding: 7px 7px 7px 15px;
     margin-bottom: 10px;
-    width: 25%;
+    width: 270px;
+    /*max-width: 300px;*/
     color: #555;
 
   border-radius: 0.5em;
@@ -818,5 +819,10 @@ ul#nav-breadcrumb a:hover {
 
 ul#nav-breadcrumb a:visited  {
 	color: #003c79;
+}
+
+#file-browser {
+  margin-left: 20px;
+  margin-right: 20px;
 }
 
