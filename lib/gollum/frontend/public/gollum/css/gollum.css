@@ -43,7 +43,7 @@ a:hover, a:visited {
 /* @section head */
 #head {
   border-bottom: 1px solid #ddd;
-  margin: 0.5em 0 0.5em;
+  margin: 0 0 0.5em;
   overflow: hidden;
   padding:10px;
 }
@@ -65,8 +65,6 @@ a:hover, a:visited {
   height: 1%;
   overflow: visible;
   padding:10px;
-}
-
 }
 
 #wiki-content .wrap {
@@ -759,6 +757,15 @@ ul.actions {
 }
 
 /* gollum@DTG-CL */
+#header-wrapper {
+  margin: 0 auto 0 auto;
+  width: 82%;
+  background-color: white;
+  border-style:none solid none solid;
+  border-width:1px;
+  border-color:#9E9E9E;
+}
+
 #cl-header{
     overflow: hidden;
     padding:10px;
