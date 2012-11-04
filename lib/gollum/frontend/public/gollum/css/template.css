@@ -379,6 +379,7 @@ a.absent {
 
 .toc.stick{
   top: 10px;
+  width: 250px;
   position: fixed;
 }
 
