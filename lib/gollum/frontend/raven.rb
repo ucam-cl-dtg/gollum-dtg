@@ -223,7 +223,7 @@ class Raven
 			session['principal'] = principal
 			session['expires'] = Time.now.to_i + life.to_i if life
 
-			# Return the authenticated person
+			# Return the status
 			return 200
 		end
 		

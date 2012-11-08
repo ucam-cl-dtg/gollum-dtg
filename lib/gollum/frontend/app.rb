@@ -142,17 +142,34 @@ module Precious
     
     get '/callback' do
     	raven = session['raven']
-    	rc = raven.check_response_from_raven(params,session,'no')
-    	if rc == 200
-			@loggedin = true
-			@username = session['principal']
-			gollum_author = { :name => @username, :email => @username+'@cam.ac.uk' }
-			session['gollum.author'] = gollum_author
-			redirect session['redirect-url']
-    	else
-    	   "Raven authentication failed: "+rc
-    	end
-    	
+      if(raven != nil)
+        rc = raven.check_response_from_raven(params,session,'no')
+        if rc == 200
+          @loggedin = true
+          @username = session['principal']
+          gollum_author = { :name => @username, :email => @username+'@cam.ac.uk' }
+          session['gollum.author'] = gollum_author
+          redirect session['redirect-url']
+        else
+          @message = "<p>Raven authentication failed (error code " + rc.to_s + "): "
+          rmsg = "<p>Go back to <a href=\"Home\">main wiki page</a> and try again</p>"
+          if    rc == 520 
+            @message+="the server uses a different version of the authentication protocol.</p>"+rmsg
+          elsif rc == 570 
+            @message+="authentication was done for a different URL than the one you are trying to access. This is probabily an application bug, please report it.</p>"+rmsg
+          elsif rc == 550 
+            @message+="your raven ticket expired.</p><p>Please <a href=\"login\">login</a> again.</p>"
+          else            
+            @message+="unknown reason, please report the bug and mention the error code.</p>"+rmsg
+          end
+          session['principal'] = nil
+          session['gollum.author'] = nil
+          @loggedin=false
+          mustache :error
+        end
+      else
+        redirect '/login'
+      end
     end
 
     before do
