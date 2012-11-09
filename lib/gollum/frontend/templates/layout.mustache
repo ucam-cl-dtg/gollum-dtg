@@ -35,7 +35,13 @@
   (d.head || d.getElementsByTagName('head')[0]).appendChild(j);
   }(document));
   </script>{{/mathjax}}
-
+  <script type="text/javascript" src="{{base_url}}/javascript/jsUtilities.js"></script>
+  <script type="text/javascript" src="{{base_url}}/javascript/footnoteLinks.js"></script>
+  <script type="text/javascript">
+    window.onload = function() {
+      footnoteLinks('wiki-body','footnotes');
+    }
+  </script>
   <title>{{title}}</title>
 </head>
 <body>

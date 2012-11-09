@@ -1,9 +1,28 @@
 /*
   print.css
-  A basic stylesheet for Gollum
+  A basic stylesheet for Gollum printing
 */
 
-a:not(.anchor):after { content: " (" attr(href) ")"; font-size: 80%; }
+a:not(.anchor).link:after,
+a::not(.anchor).visited:after {
+  content: " (" attr(href) ") ";
+  font-size: 80%;
+  word-wrap: break-word; 
+}
+html.noted a:link:after,
+html.noted a:visited:after {
+  content: "";
+}
+
+.printOnly {
+  display: inline;
+}
+
+#footnotes{
+  display:block;
+  margin-top:30px;
+  margin-left:20px;
+}
 
 #wiki-wrapper #template blockquote {
   margin: 1em 0;
@@ -16,7 +35,7 @@ a:not(.anchor):after { content: " (" attr(href) ")"; font-size: 80%; }
 body, html {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 10px;
-  margin: 0 0 7em;
+  margin: 0 0 0;
   padding: 0;
   background-color:white;
 }

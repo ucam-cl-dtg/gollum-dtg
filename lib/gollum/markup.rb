@@ -98,7 +98,7 @@ module Gollum
         level = h.name.gsub(/[hH]/,'').to_i
 
         # Add anchors
-        h.add_child(%Q{<a class="anchor" id="#{h_name}" href="##{h_name}"></a>})
+        h.add_child(%Q{<a class="anchor ignore" id="#{h_name}" href="##{h_name}"></a>})
 
         # Build TOC
         toc ||= Nokogiri::XML::DocumentFragment.parse('<div class="toc"><div class="toc-title">Table of Contents</div></div>')
@@ -116,7 +116,7 @@ module Gollum
         end
         node = Nokogiri::XML::Node.new('li', doc)
         # % -> %25 so anchors work on Firefox. See issue #475
-        node.add_child(%Q{<a href="##{h_name}">#{h.content}</a>})
+        node.add_child(%Q{<a class="ignore" href="##{h_name}">#{h.content}</a>})
         tail.add_child(node)
       end
       toc = toc.to_xhtml if toc != nil
