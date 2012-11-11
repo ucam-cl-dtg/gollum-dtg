@@ -33,6 +33,7 @@ Gem::Specification.new do |s|
   s.add_dependency('nokogiri', '~> 1.5.5')
   s.add_dependency('useragent', '~> 0.4.12')
   s.add_dependency('stringex', '~> 1.4.0')
+  s.add_dependency('gitolite-dtg', '>= 0.1.0')
 
   s.add_development_dependency('RedCloth', '~> 4.2.9')
   s.add_development_dependency('mocha', '~> 0.12.7')

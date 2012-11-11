@@ -4,7 +4,7 @@ PATH
     gollum (2.3.2)
       github-markdown (~> 0.5.1)
       github-markup (>= 0.7.4, < 1.0.0)
-      gitolite-dtg (>= 0.2.0)
+      gitolite-dtg (>= 0.1.0)
       grit (~> 2.5.0)
       mustache (>= 0.99.4, < 1.0.0)
       nokogiri (~> 1.5.5)
