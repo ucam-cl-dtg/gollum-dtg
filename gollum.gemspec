@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
   s.add_dependency('useragent', '~> 0.4.12')
   s.add_dependency('stringex', '~> 1.4.0')
   s.add_dependency('gitolite-dtg', '>= 0.2.0')
+  s.add_dependency('rake', '~> 0.9')
 
   s.add_development_dependency('RedCloth', '~> 4.2.9')
   s.add_development_dependency('mocha', '~> 0.12.7')
