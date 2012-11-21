@@ -83,56 +83,118 @@ module Precious
     end
     
     helpers do
-	  def protected!
-		unless authorized?
-			raven = Raven.new
-			raven.return_url = request.base_url + '/callback'
-			raven.description = 'DTG Gollum Wiki'
-			
-			message = 'the DTG Wiki page you are trying to access requires authorization'
-			if(session['principal']==nil)
-				raven_req_url = raven.get_raven_request(session, message, 'yes')
-			else
-				raven_req_url = raven.get_raven_request(session, message, 'no')
-			end
-			session['redirect-url'] = request.url
-			session['raven'] = raven
+  	  def protected!
+    		unless authorized?
+    			raven = Raven.new
+    			raven.return_url = request.base_url + '/callback'
+    			raven.description = 'DTG Gollum Wiki'
+    			
+    			message = 'the DTG Wiki page you are trying to access requires authorization'
+    			if(session['principal']==nil)
+    				raven_req_url = raven.get_raven_request(session, message, 'yes')
+    			else
+    				raven_req_url = raven.get_raven_request(session, message, 'no')
+    			end
+    			session['redirect-url'] = request.url
+    			session['raven'] = raven
 
-			redirect raven_req_url
-		end
-	  end
+    			redirect raven_req_url
+    		end
+  	  end
 
-	  def authorized?
-		is_login = 0
-		if Raven::check_session(session,'no')
-			@loggedin = true
-		    @username = session['principal']
-			is_login = 1
-		else
-			@loggedin = false
-			@username = nil
-			is_login = 0
-		end
-		
-		if request.path_info=='/' || request.path_info == '/Home'
-			return true
-		end
-		
-		if is_login == 1
-			return true
-		else
-			return false
-		end
-	  end
-
-	end
-
-
-	get '/login' do
-		protected!
-	    redirect '/'
+  	  def authorized?
+    		is_login = 0
+    		if Raven::check_session(session,'no')
+    			@loggedin = true
+    		    @username = session['principal']
+    			is_login = 1
+    		else
+    			@loggedin = false
+    			@username = nil
+    			is_login = 0
+    		end
+  		
+    		if request.path_info=='/' || request.path_info == '/list'
+    			return true
+    		end
+  		
+    		if is_login == 1
+    			return true
+    		else
+    			return false
+    		end
+  	  end
     end
-    
+
+    # path is set to name if path is nil.
+    #   if path is 'a/b' and a and b are dirs, then
+    #   path must have a trailing slash 'a/b/' or
+    #   extract_path will trim path to 'a'
+    # name, path, version
+    def wiki_page(repo_name, name, path = nil, version = nil, exact = true)
+      path = name if path.nil?
+      name = extract_name(name)
+      path = extract_path(path)
+      path = '/' if exact && path.nil?
+
+      opt  = settings.wiki_options.merge({ :base_path => File.join(@base_url,repo_name) })
+      wiki = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,repo_name + '.git'), opt)
+
+      OpenStruct.new(:wiki => wiki, :page => wiki.paged(name, path, exact, version),
+                     :name => name, :path => path)
+    end
+
+    def wiki_new(gollum_path, opt)
+      Gollum::Wiki.new(gollum_path, opt)
+    end
+
+    def show_page_or_file(repo_name, fullpath)
+      name         = extract_name(fullpath)
+      path         = extract_path(fullpath)
+      opt          = settings.wiki_options.merge({ :base_path => File.join(@base_url,repo_name) })
+      wiki         = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,repo_name + '.git'), opt)
+
+      path = '/' if path.nil?
+
+      if page = wiki.paged(name, path, exact = true)
+        @page = page
+        @name = name
+        @editable = true
+        @repo = repo_name
+        @content = page.formatted_data
+        @toc_content = wiki.universal_toc ? @page.toc_data : nil
+        @mathjax = wiki.mathjax
+        mustache :page
+      elsif file = wiki.file(fullpath)
+        content_type file.mime_type
+        file.raw_data
+      else
+        page_path = [path, name].compact.join('/')
+        redirect to("/"+repo_name+"/create/#{clean_url(encodeURIComponent(page_path))}")
+      end
+    end
+
+    def update_wiki_page(wiki, page, content, commit, name = nil, format = nil)
+      return if !page ||
+        ((!content || page.raw_data == content) && page.format == format)
+      name    ||= page.name
+      format    = (format || page.format).to_sym
+      content ||= page.raw_data
+      wiki.update_page(page, name, format, content.to_s, commit)
+    end
+
+
+    ####
+    ##
+    ## Define Routes 
+    ##
+    ####
+
+  	get '/login' do
+  		protected!
+  	    redirect '/'
+      end
+      
     get '/logout' do
        	session['principal'] = nil
        	session['gollum.author'] = nil
@@ -174,50 +236,37 @@ module Precious
 
     before do
       @base_url = url('/', false).chomp('/')
+      @repo = @base_url
+      @wiki_bcrumb = settings.wiki_bcrumb
       settings.wiki_options.merge!({ :base_path => @base_url }) unless settings.wiki_options.has_key? :base_path
     end
 
     get '/' do
-	  protected!
-      redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, 'Home')
+    protected!
+      redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, 'list')
     end
 
-    # path is set to name if path is nil.
-    #   if path is 'a/b' and a and b are dirs, then
-    #   path must have a trailing slash 'a/b/' or
-    #   extract_path will trim path to 'a'
-    # name, path, version
-    def wiki_page(name, path = nil, version = nil, exact = true)
-      path = name if path.nil?
-      name = extract_name(name)
-      path = extract_path(path)
-      path = '/' if exact && path.nil?
-
-      wiki = wiki_new
-
-      OpenStruct.new(:wiki => wiki, :page => wiki.paged(name, path, exact, version),
-                     :name => name, :path => path)
+    get '/list' do
+    protected!
+      @results = settings.wiki_repos_path
+      mustache :wiki_list
     end
 
-    def wiki_new
-      Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
-    end
-
-    get '/data/*' do
-      if page = wiki_page(params[:splat].first).page
+    get '/:repo/data/*' do
+      if page = wiki_page(params[:repo], params[:splat].first).page
         page.raw_data
       end
     end
 
-    get '/edit/*' do
+    get '/:repo/edit/*' do
       protected!
-      wikip = wiki_page(params[:splat].first)
+      wikip = wiki_page(params[:repo], params[:splat].first)
       @name = wikip.name
       @path = wikip.path
       wiki = wikip.wiki
       if page = wikip.page
         if wiki.live_preview && page.format.to_s.include?('markdown') && supported_useragent?(request.user_agent)
-          live_preview_url = '/livepreview/index.html?page=' + encodeURIComponent(@name)
+          live_preview_url = '/'+params[:repo]+'/livepreview/index.html?page=' + encodeURIComponent(@name)
           if @path
             live_preview_url << '&path=' + encodeURIComponent(@path)
           end
@@ -225,20 +274,22 @@ module Precious
         else
           @page = page
           @page.version = wiki.repo.log(wiki.ref, @page.path).first
+          @repo = params[:repo]
           raw_data = page.raw_data
           @content = raw_data.respond_to?(:force_encoding) ? raw_data.force_encoding('UTF-8') : raw_data
           mustache :edit
         end
       else
-        redirect to("/create/#{encodeURIComponent(@name)}")
+        redirect to("/"+params[:repo]+"/create/#{encodeURIComponent(@name)}")
       end
     end
 
-    post '/edit/*' do
+    post '/:repo/edit/*' do
       protected!
       path      = '/' + clean_url(sanitize_empty_params(params[:path])).to_s
       page_name = CGI.unescape(params[:page])
-      wiki      = wiki_new
+      opt       = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
+      wiki      = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), opt)
       page      = wiki.paged(page_name, path, exact = true)
       return if page.nil?
       rename    = params[:rename].to_url if params[:rename]
@@ -254,33 +305,34 @@ module Precious
 
       page = wiki.page(rename) if rename
 
-      redirect to("/#{page.escaped_url_path}") unless page.nil?
+      redirect to("/"+params[:repo]+"/#{page.escaped_url_path}") unless page.nil?
     end
 
-    get '/delete/*' do
-      wikip = wiki_page(params[:splat].first)
+    get '/:repo/delete/*' do
+      wikip = wiki_page(params[:repo], params[:splat].first)
       name = wikip.name
       wiki = wikip.wiki
       page = wikip.page
       wiki.delete_page(page, { :message => "Destroyed #{name} (#{page.format})" })
 
-      redirect to('/')
+      redirect to('/'+params[:repo])
     end
 
-    get '/create/*' do
-      wikip = wiki_page(params[:splat].first.gsub('+', '-'))
+    get '/:repo/create/*' do
+      wikip = wiki_page(params[:repo], params[:splat].first.gsub('+', '-'))
       @name = wikip.name.to_url
       @path = wikip.path
+      @repo = params[:repo]
 
       page = wikip.page
       if page
-        redirect to("/#{page.escaped_url_path}")
+        redirect to("/"+params[:repo]+"/#{page.escaped_url_path}")
       else
         mustache :create
       end
     end
 
-    post '/create' do
+    post '/:repo/create' do
       name         = params[:page].to_url
       path         = sanitize_empty_params(params[:path])
       path = '' if path.nil?
@@ -294,20 +346,21 @@ module Precious
       page_dir = File.join(page_dir, path)
 
       # write_page is not directory aware so use wiki_options to emulate dir support.
-      wiki_options = settings.wiki_options.merge({ :page_file_dir => page_dir })
-      wiki         = Gollum::Wiki.new(settings.gollum_path, wiki_options)
+      wiki_options = settings.wiki_options.merge({ :base_path=>File.join(@base_url,params[:repo]), :page_file_dir => page_dir })
+      wiki         = Gollum::Wiki.new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), wiki_options)
 
       begin
         wiki.write_page(name, format, params[:content], commit_message)
-        redirect to("/#{clean_url(CGI.escape(::File.join(page_dir,name)))}")
+        redirect to("/"+params[:repo]+"/#{clean_url(CGI.escape(::File.join(page_dir,name)))}")
       rescue Gollum::DuplicatePageError => e
+        @repo = params[:repo]
         @message = "Duplicate page: #{e.message}"
         mustache :error
       end
     end
 
-    post '/revert/:page/*' do
-      wikip        = wiki_page(params[:page])
+    post '/:repo/revert/:page/*' do
+      wikip        = wiki_page(params[:repo], params[:page])
       @path        = wikip.path
       @name        = wikip.name
       wiki         = wikip.wiki
@@ -317,42 +370,46 @@ module Precious
       sha2         = shas.shift
 
       if wiki.revert_page(@page, sha1, sha2, commit_message)
-        redirect to("/#{@page.escaped_url_path}")
+        redirect to("/"+params[:repo]+"/#{@page.escaped_url_path}")
       else
         sha2, sha1 = sha1, "#{sha1}^" if !sha2
         @versions  = [sha1, sha2]
         diffs      = wiki.repo.diff(@versions.first, @versions.last, @page.path)
         @diff      = diffs.first
         @message   = "The patch does not apply."
+        @repo = params[:repo]
         mustache :compare
       end
     end
 
-    post '/preview' do
-      wiki     = wiki_new
+    post '/:repo/preview' do
+      opt      = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
+      wiki     = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), opt)
       @name    = params[:page] || "Preview"
       @page    = wiki.preview_page(@name, params[:content], params[:format])
       @content = @page.formatted_data
       @toc_content = wiki.universal_toc ? @page.toc_data : nil
       @mathjax = wiki.mathjax
       @editable = false
+      @repo = params[:repo]
       mustache :page
     end
 
-    get '/history/*' do
-      @page        = wiki_page(params[:splat].first).page
+    get '/:repo/history/*' do
+      @page        = wiki_page(params[:repo], params[:splat].first).page
       @page_num    = [params[:page].to_i, 1].max
       @versions    = @page.versions :page => @page_num
+      @repo        = params[:repo]
       mustache :history
     end
 
-    post '/compare/*' do
+    post '/:repo/compare/*' do
       @file     = params[:splat].first
       @versions = params[:versions] || []
       if @versions.size < 2
-        redirect to("/history/#{@file}")
+        redirect to("/"+params[:repo]+"/history/#{@file}")
       else
-        redirect to("/compare/%s/%s...%s" % [
+        redirect to("/"+params[:repo]+"/compare/%s/%s...%s" % [
           @file,
           @versions.last,
           @versions.first]
@@ -361,14 +418,14 @@ module Precious
     end
 
     get %r{
-      /compare/ # match any URL beginning with /compare/
+      /([\w]+)/compare/ # match any URL beginning with repo_name/compare/
       (.+)      # extract the full path (including any directories)
       /         # match the final slash
       ([^.]+)   # match the first SHA1
       \.{2,3}   # match .. or ...
       (.+)      # match the second SHA1
-    }x do |path, start_version, end_version|
-      wikip        = wiki_page(path)
+    }x do |repo_name, path, start_version, end_version|
+      wikip        = wiki_page(repo_name, path)
       @path        = wikip.path
       @name        = wikip.name
       @versions    = [start_version, end_version]
@@ -376,6 +433,7 @@ module Precious
       @page        = wikip.page
       diffs        = wiki.repo.diff(@versions.first, @versions.last, @page.path)
       @diff        = diffs.first
+      @repo        = repo_name
       mustache :compare
     end
 
@@ -383,10 +441,11 @@ module Precious
       halt 404
     end
 
-    get %r{/(.+?)/([0-9a-f]{40})} do
-      file_path = params[:captures][0]
-      version   = params[:captures][1]
-      wikip     = wiki_page(file_path, file_path, version)
+    get %r{/([\w]+)/(.+?)/([0-9a-f]{40})} do
+      repo_name = params[:captures][0]
+      file_path = params[:captures][1]
+      version   = params[:captures][2]
+      wikip     = wiki_page(repo_name, file_path, file_path, version)
       name      = wikip.name
       path      = wikip.path
       if page = wikip.page
@@ -394,32 +453,36 @@ module Precious
         @name = name
         @content = page.formatted_data
         @editable = true
+        @repo     = repo_name
         mustache :page
       else
         halt 404
       end
     end
 
-    get '/search' do
+    get '/:repo/search' do
       @query = params[:q]
-      wiki = wiki_new
+      wiki_options = settings.wiki_options.merge({ :base_path => params[:repo] })
+      wiki = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), wiki_options)
       @results = wiki.search @query
       @name = @query
+      @repo = params[:repo]
       mustache :search
     end
 
     get %r{
-      /pages  # match any URL beginning with /pages
+      /([\w]+)/pages  # match any URL beginning with repo_name/pages
       (?:     # begin an optional non-capturing group
         /(.+) # capture any path after the "/pages" excluding the leading slash
       )?      # end the optional non-capturing group
-    }x do |path|
+    }x do |repo_name, path|
       @path        = extract_path(path) if path
-      wiki_options = settings.wiki_options.merge({ :page_file_dir => @path })
-      wiki         = Gollum::Wiki.new(settings.gollum_path, wiki_options)
+      wiki_options = settings.wiki_options.merge({ :page_file_dir => @path, :base_path => repo_name })
+      wiki         = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern, repo_name + '.git'), wiki_options)
       @results     = wiki.pages
       @results     += wiki.files if settings.wiki_options[:show_all]
       @ref         = wiki.ref
+      @repo        = repo_name
       mustache :pages
     end
 
@@ -433,43 +496,16 @@ module Precious
       mustache :file_view, { :layout => false }
     end
 
-    get '/*' do
+    get "/:repo/?" do
+    protected!
+      redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, params[:repo], 'Home')
+    end
+
+    get '/:repo/*' do
       protected!
-      show_page_or_file(params[:splat].first)
+      show_page_or_file(params[:repo], params[:splat].first)
     end
 
-    def show_page_or_file(fullpath)
-      name         = extract_name(fullpath)
-      path         = extract_path(fullpath)
-      wiki         = wiki_new
-
-      path = '/' if path.nil?
-
-      if page = wiki.paged(name, path, exact = true)
-        @page = page
-        @name = name
-        @editable = true
-        @content = page.formatted_data
-        @toc_content = wiki.universal_toc ? @page.toc_data : nil
-        @mathjax = wiki.mathjax
-        mustache :page
-      elsif file = wiki.file(fullpath)
-        content_type file.mime_type
-        file.raw_data
-      else
-        page_path = [path, name].compact.join('/')
-        redirect to("/create/#{clean_url(encodeURIComponent(page_path))}")
-      end
-    end
-
-    def update_wiki_page(wiki, page, content, commit, name = nil, format = nil)
-      return if !page ||
-        ((!content || page.raw_data == content) && page.format == format)
-      name    ||= page.name
-      format    = (format || page.format).to_sym
-      content ||= page.raw_data
-      wiki.update_page(page, name, format, content.to_s, commit)
-    end
 
     private
 

@@ -23,6 +23,15 @@ module Precious
       def base_url
         @base_url
       end
+
+      def repo
+        @repo
+      end
+
+      def wiki_bcrumb
+        @wiki_bcrumb
+      end
+
     end
   end
 end
