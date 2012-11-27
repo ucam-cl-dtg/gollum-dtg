@@ -5,6 +5,7 @@ require 'gollum'
 require 'mustache/sinatra'
 require 'useragent'
 require 'stringex'
+require 'gitolite-dtg'
 
 require 'gollum/frontend/views/layout'
 require 'gollum/frontend/views/editable'
@@ -83,8 +84,9 @@ module Precious
     end
     
     helpers do
-  	  def protected!
-    		unless authorized?
+  	  def protected!(rn, rpath, requested_access)
+    		auth_rez = authorized(rn, rpath, requested_access)
+        if auth_rez == 0
     			raven = Raven.new
     			raven.return_url = request.base_url + '/callback'
     			raven.description = 'DTG Gollum Wiki'
@@ -99,29 +101,45 @@ module Precious
     			session['raven'] = raven
 
     			redirect raven_req_url
+        elsif auth_rez == 2
+            @title = "Access Denied"
+            @message = "The access to this page is restricted. User "+session['principal']+" does not have sufficient permissions."
+            halt mustache :error
     		end
   	  end
 
-  	  def authorized?
-    		is_login = 0
-    		if Raven::check_session(session,'no')
+  	  def authorized(rn, rpath, requested_access)
+        is_login = 0
+    		if(Raven::check_session(session,'no') != nil)
     			@loggedin = true
-    		    @username = session['principal']
+    		  @username = session['principal']
     			is_login = 1
     		else
     			@loggedin = false
     			@username = nil
     			is_login = 0
     		end
-  		
-    		if request.path_info=='/' || request.path_info == '/list'
-    			return true
-    		end
-  		
-    		if is_login == 1
-    			return true
+
+        if(rn == nil && rpath == nil)
+          return 1
+        end
+
+        if(rpath == nil)
+          rpath = '/'
+        end
+  		  ga_repo = settings.gitolite_repo
+    		if(is_login == 1)
+          if(rn == nil)
+            return 1
+          end
+          auth_ok =  ga_repo.authorize(File.join(settings.wiki_repos_pattern, rn), @username, rpath, requested_access)
+          auth_ok ? 1 : 2
     		else
-    			return false
+          if(rn == nil)
+            return 1
+          end
+    			auth_ok =  ga_repo.authorize(File.join(settings.wiki_repos_pattern, rn), nil, rpath, requested_access)
+          auth_ok ? 1 : 0
     		end
   	  end
     end
@@ -191,7 +209,7 @@ module Precious
     ####
 
   	get '/login' do
-  		protected!
+  		protected!(nil, "/", 'R')
   	    redirect '/'
       end
       
@@ -214,13 +232,19 @@ module Precious
           redirect session['redirect-url']
         else
           @message = "<p>Raven authentication failed (error code " + rc.to_s + "): "
-          rmsg = "<p>Go back to <a href=\"Home\">main wiki page</a> and try again</p>"
+          rmsg = "<p>Go back to the <a href=\"list\">wiki list</a> and try again</p>"
           if    rc == 520 
             @message+="the server uses a different version of the authentication protocol.</p>"+rmsg
-          elsif rc == 570 
+          elsif rc == 570
             @message+="authentication was done for a different URL than the one you are trying to access. This is probabily an application bug, please report it.</p>"+rmsg
-          elsif rc == 550 
-            @message+="your raven ticket expired.</p><p>Please <a href=\"login\">login</a> again.</p>"
+          elsif rc == 540
+            @message+="something's fishy (raven reported that no login interraction took place). Please report the error.</p>"
+          elsif rc == 410
+            @message="Your Raven authentication was unsuccessful.</p>"+rmsg
+          elsif rc == 550
+            @loggedin=false
+            redirect '/login' 
+            # @message+="your raven ticket expired.</p><p>Please <a href=\"login\">login</a> again.</p>"
           else            
             @message+="unknown reason, please report the bug and mention the error code.</p>"+rmsg
           end
@@ -242,24 +266,27 @@ module Precious
     end
 
     get '/' do
-    protected!
       redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, 'list')
     end
 
     get '/list' do
-    protected!
-      @results = settings.wiki_repos_path
+    protected!(nil, nil, 'R')
+      settings.gitolite_repo.reload!
+      repos = settings.gitolite_repo.config.get_repos(settings.wiki_repos_pattern)
+      repos_path = repos.map { |s| s[settings.wiki_repos_pattern.length,s.length] }
+      @results = repos_path
       mustache :wiki_list
     end
 
     get '/:repo/data/*' do
+    protected!(params[:repo], params[:splat].first, 'R')
       if page = wiki_page(params[:repo], params[:splat].first).page
         page.raw_data
       end
     end
 
     get '/:repo/edit/*' do
-      protected!
+      protected!(params[:repo], params[:splat].first, 'W')
       wikip = wiki_page(params[:repo], params[:splat].first)
       @name = wikip.name
       @path = wikip.path
@@ -285,7 +312,7 @@ module Precious
     end
 
     post '/:repo/edit/*' do
-      protected!
+    protected!(params[:repo], params[:splat].first, 'W')
       path      = '/' + clean_url(sanitize_empty_params(params[:path])).to_s
       page_name = CGI.unescape(params[:page])
       opt       = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
@@ -309,6 +336,7 @@ module Precious
     end
 
     get '/:repo/delete/*' do
+    protected!(params[:repo], params[:splat].first, 'W')
       wikip = wiki_page(params[:repo], params[:splat].first)
       name = wikip.name
       wiki = wikip.wiki
@@ -319,6 +347,7 @@ module Precious
     end
 
     get '/:repo/create/*' do
+    protected!(params[:repo], params[:splat].first, 'W')
       wikip = wiki_page(params[:repo], params[:splat].first.gsub('+', '-'))
       @name = wikip.name.to_url
       @path = wikip.path
@@ -333,6 +362,7 @@ module Precious
     end
 
     post '/:repo/create' do
+      protected!(params[:repo], params[:path], 'W')
       name         = params[:page].to_url
       path         = sanitize_empty_params(params[:path])
       path = '' if path.nil?
@@ -360,6 +390,7 @@ module Precious
     end
 
     post '/:repo/revert/:page/*' do
+      protected!(params[:repo], params[:page], 'W')
       wikip        = wiki_page(params[:repo], params[:page])
       @path        = wikip.path
       @name        = wikip.name
@@ -383,6 +414,7 @@ module Precious
     end
 
     post '/:repo/preview' do
+      protected!(params[:repo], params[:page], 'R')
       opt      = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
       wiki     = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), opt)
       @name    = params[:page] || "Preview"
@@ -396,6 +428,7 @@ module Precious
     end
 
     get '/:repo/history/*' do
+      protected!(params[:repo], params[:page], 'R')
       @page        = wiki_page(params[:repo], params[:splat].first).page
       @page_num    = [params[:page].to_i, 1].max
       @versions    = @page.versions :page => @page_num
@@ -404,6 +437,7 @@ module Precious
     end
 
     post '/:repo/compare/*' do
+      protected!(params[:repo], params[:splat].first, 'R')
       @file     = params[:splat].first
       @versions = params[:versions] || []
       if @versions.size < 2
@@ -425,6 +459,7 @@ module Precious
       \.{2,3}   # match .. or ...
       (.+)      # match the second SHA1
     }x do |repo_name, path, start_version, end_version|
+      protected!(repo_name, path, 'R')
       wikip        = wiki_page(repo_name, path)
       @path        = wikip.path
       @name        = wikip.name
@@ -445,6 +480,7 @@ module Precious
       repo_name = params[:captures][0]
       file_path = params[:captures][1]
       version   = params[:captures][2]
+      #protected!(repo_name, file_path, 'R')
       wikip     = wiki_page(repo_name, file_path, file_path, version)
       name      = wikip.name
       path      = wikip.path
@@ -461,6 +497,7 @@ module Precious
     end
 
     get '/:repo/search' do
+      protected!(repo_name, '/', 'R')
       @query = params[:q]
       wiki_options = settings.wiki_options.merge({ :base_path => params[:repo] })
       wiki = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), wiki_options)
@@ -476,6 +513,7 @@ module Precious
         /(.+) # capture any path after the "/pages" excluding the leading slash
       )?      # end the optional non-capturing group
     }x do |repo_name, path|
+      protected!(repo_name, path, 'R')
       @path        = extract_path(path) if path
       wiki_options = settings.wiki_options.merge({ :page_file_dir => @path, :base_path => repo_name })
       wiki         = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern, repo_name + '.git'), wiki_options)
@@ -486,23 +524,27 @@ module Precious
       mustache :pages
     end
 
-    get '/fileview' do
-      wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
-      show_all = settings.wiki_options[:show_all]
-      # if showing all files include wiki.files
-      @results = show_all ? Gollum::FileView.new(wiki.pages + wiki.files, show_all).render_files :
-                            Gollum::FileView.new(wiki.pages).render_files
-      @ref = wiki.ref
-      mustache :file_view, { :layout => false }
-    end
+    # Fileview disabled
+    #get '/:repo/fileview' do
+    #  wiki_options = settings.wiki_options.merge({ :base_path => repo_name })
+    #  wiki         = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern, repo_name + '.git'), wiki_options)
+    #  show_all     = settings.wiki_options[:show_all]
+    #
+    #  # if showing all files include wiki.files
+    #  @results = show_all ? Gollum::FileView.new(wiki.pages + wiki.files, show_all).render_files :
+    #                        Gollum::FileView.new(wiki.pages).render_files
+    #  @ref         = wiki.ref
+    #  @repo        = repo_name
+    #  mustache :file_view, { :layout => false }
+    #end
 
     get "/:repo/?" do
-    protected!
+    #protected!(params[:repo], '/', 'R')
       redirect File.join(settings.wiki_options[:page_file_dir].to_s,settings.wiki_options[:base_path].to_s, params[:repo], 'Home')
     end
 
     get '/:repo/*' do
-      protected!
+    protected!(params[:repo], params[:splat].join, 'R')
       show_page_or_file(params[:repo], params[:splat].first)
     end
 

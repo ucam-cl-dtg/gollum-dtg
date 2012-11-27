@@ -32,6 +32,18 @@ module Precious
         @wiki_bcrumb
       end
 
+      def guest_mode
+        !@loggedin
+      end
+      
+      def loggedin
+        @loggedin
+      end
+      
+      def username
+        @username
+      end
+
     end
   end
 end

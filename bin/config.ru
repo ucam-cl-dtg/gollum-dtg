@@ -16,10 +16,27 @@ HELP
 require 'optparse'
 require 'rubygems'
 require 'gollum'
+require 'gitolite-dtg'
 
 exec = {}
 options = { 'port' => 3000, 'bind' => '0.0.0.0' }
 wiki_options = {}
+
+git_repos_path = '/srv/git/repositories' # CHANGE THIS TO POINT TO YOUR GITOLITE BASE REPO PATH
+wiki_repos_pattern = 'wiki/'
+wikis_breadcrumb_url = 'http://localhost/list'
+
+ga_repo = Gitolite::Dtg::GitoliteAdmin.new(File.join(git_repos_path , "gitolite-admin.git"))
+repos = ga_repo.config.get_repos(wiki_repos_pattern)
+repos_path = repos.map { |s| s[wiki_repos_pattern.length,s.length] }
+
+print "Here we go!"
+Precious::App.set(:repos_path, git_repos_path)
+Precious::App.set(:gitolite_repo, ga_repo)
+Precious::App.set(:wiki_repos, repos)
+Precious::App.set(:wiki_repos_path, repos_path)
+Precious::App.set(:wiki_repos_pattern, wiki_repos_pattern)
+Precious::App.set(:wiki_bcrumb, wikis_breadcrumb_url)
 
 opts = OptionParser.new do |opts|
   opts.banner = help
@@ -112,8 +129,11 @@ if options['irb']
   end
 else
   require 'gollum/frontend/app'
-  Precious::App.set(:gollum_path, gollum_path)
+
+
+
   Precious::App.set(:wiki_options, wiki_options)
+
 
   if cfg = options['config']
     # If the path begins with a '/' it will be considered an absolute path,
