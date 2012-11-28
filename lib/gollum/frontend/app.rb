@@ -136,7 +136,7 @@ module Precious
           auth_ok ? 1 : 2
     		else
           if(rn == nil)
-            return 1
+            return 0
           end
     			auth_ok =  ga_repo.authorize(File.join(settings.wiki_repos_pattern, rn), nil, rpath, requested_access)
           auth_ok ? 1 : 0
