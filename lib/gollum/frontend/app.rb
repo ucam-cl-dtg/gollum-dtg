@@ -497,7 +497,7 @@ module Precious
     end
 
     get '/:repo/search' do
-      protected!(repo_name, '/', 'R')
+      protected!(params[:repo], '/', 'R')
       @query = params[:q]
       wiki_options = settings.wiki_options.merge({ :base_path => params[:repo] })
       wiki = wiki_new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), wiki_options)
