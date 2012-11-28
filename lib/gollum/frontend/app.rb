@@ -452,7 +452,7 @@ module Precious
     end
 
     get %r{
-      /([\w]+)/compare/ # match any URL beginning with repo_name/compare/
+      /([\w-]+)/compare/ # match any URL beginning with repo_name/compare/
       (.+)      # extract the full path (including any directories)
       /         # match the final slash
       ([^.]+)   # match the first SHA1
@@ -476,7 +476,7 @@ module Precious
       halt 404
     end
 
-    get %r{/([\w]+)/(.+?)/([0-9a-f]{40})} do
+    get %r{/([\w-]+)/(.+?)/([0-9a-f]{40})} do
       repo_name = params[:captures][0]
       file_path = params[:captures][1]
       version   = params[:captures][2]
@@ -508,7 +508,7 @@ module Precious
     end
 
     get %r{
-      /([\w]+)/pages  # match any URL beginning with repo_name/pages
+      /([\w-]+)/pages  # match any URL beginning with repo_name/pages
       (?:     # begin an optional non-capturing group
         /(.+) # capture any path after the "/pages" excluding the leading slash
       )?      # end the optional non-capturing group
