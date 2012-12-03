@@ -41,8 +41,10 @@ module Precious
     include Precious::Helpers
 
     dir = File.dirname(File.expand_path(__FILE__))
-    enable :sessions
-
+    #enable :sessions
+    
+    use Rack::Session::Cookie, :key => 'rack.session',  :expire_after => 2592000 # In seconds
+    
     # Detect unsupported browsers.
     Browser = Struct.new(:browser, :version)
 
