@@ -89,7 +89,12 @@ module Precious
   	  def protected!(rn, rpath, requested_access)
     		auth_rez = authorized(rn, rpath, requested_access)
         if auth_rez == 0
-    			raven = Raven.new
+          raven = nil
+          if session['raven'] != nil
+    			  raven = session['raven']
+          else
+            raven = Raven.new
+          end
     			raven.return_url = request.base_url + '/callback'
     			raven.description = 'DTG Gollum Wiki'
     			
@@ -97,7 +102,7 @@ module Precious
     			if(session['principal']==nil)
     				raven_req_url = raven.get_raven_request(session, message, 'yes')
     			else
-    				raven_req_url = raven.get_raven_request(session, message, 'no')
+    				raven_req_url = raven.get_raven_request(session, message, '')
     			end
     			session['redirect-url'] = request.url
     			session['raven'] = raven
