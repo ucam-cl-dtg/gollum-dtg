@@ -42,9 +42,9 @@ module Precious
 
     dir = File.dirname(File.expand_path(__FILE__))
     #enable :sessions
-    
-    use Rack::Session::Cookie, :key => 'rack.session',  :expire_after => 2592000 # In seconds
-    
+
+    use Rack::Session::Cookie, :key => 'rack.session', :expire_after => 2592000 # In seconds
+
     # Detect unsupported browsers.
     Browser = Struct.new(:browser, :version)
 
@@ -89,12 +89,7 @@ module Precious
   	  def protected!(rn, rpath, requested_access)
     		auth_rez = authorized(rn, rpath, requested_access)
         if auth_rez == 0
-          raven = nil
-          if session['raven'] != nil
-    			  raven = session['raven']
-          else
-            raven = Raven.new
-          end
+    			raven = Raven.new
     			raven.return_url = request.base_url + '/callback'
     			raven.description = 'DTG Gollum Wiki'
     			
@@ -216,7 +211,7 @@ module Precious
     ####
 
   	get '/login' do
-  		protected!(nil, "/", 'R')
+  	    protected!(nil, "/", 'R')
   	    redirect '/'
       end
       
