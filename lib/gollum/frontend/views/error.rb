@@ -4,7 +4,7 @@ module Precious
       attr_reader :message
 
       def title
-        @title!=nil ? @title : "Oh noes!"
+        @title!=nil ? @title : "Wicked. Tricksy, False."
       end
 
     end
