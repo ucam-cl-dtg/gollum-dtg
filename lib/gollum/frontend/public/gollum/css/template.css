@@ -122,11 +122,11 @@ a.absent {
   color: #777;
   font-size: 14px;
 }
-.markdown-body p,
+.markdown-body > p,
 .markdown-body blockquote,
-.markdown-body ul,
-.markdown-body ol,
-.markdown-body dl,
+.markdown-body > ul,
+.markdown-body > ol,
+.markdown-body > dl,
 .markdown-body table,
 .markdown-body pre {
   margin: 10px 0;
