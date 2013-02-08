@@ -171,8 +171,8 @@ a.absent {
 .markdown-body li p.first {
   display: inline-block;
 }
-.markdown-body ul,
-.markdown-body ol {
+#wiki-body .markdown-body ul,
+#wiki-body .markdown-body ol {
   padding-left: 30px;
 }
 .markdown-body ul li>:first-child,
@@ -375,6 +375,9 @@ a.absent {
   margin: 0;
   border-radius: 3px;
 }
+.toc a{
+  text-decoration:none
+}
 
 .toc.stick{
   top: 10px;
@@ -392,22 +395,28 @@ a.absent {
 }
 .toc ul {
   padding-left: 10px;
-  margin: 0;
+  color: #bbb;
+  margin: 3px 0 0 0;
+  line-height: 1.75em;
+  list-style-position: outside;
+  list-style-type: round;
+}
+.toc ul:hover{
+  background-color: #f8f8f8;
 }
 .toc>ul {
-  margin-left: 10px;
-  font-size: 17px;
+  font-size: 14px;
+  font-weight: bold;
+  padding-left:25px;
 }
 .toc ul ul {
   font-size: 14px;
-  font-weight: bold;
+  font-weight: normal;
 }
 .toc ul ul ul {
-  font-size: 14px;
-  font-weight: normal
-}
-.toc ul li{
-  margin: 0;
+  font-size: 12px;
+  font-weight: normal;
+
 }
 #header-content .toc,
 #footer-content .toc,

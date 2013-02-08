@@ -164,15 +164,14 @@ a:hover, a:visited {
       text-shadow: 0 1px 0 #fff;
     }
 
-    #wiki-rightbar ul {
-      margin: 3px 0 0 0;
+    #wiki-rightbar > ul {
+      margin-bottom: 3px;
       padding: 0;
     }
 
-    #wiki-rightbar ul li {
+    #wiki-rightbar > ul li {
       color: #bbb;
       margin: 0 0 0 1em;
-      padding: 0;
       line-height: 1.75em;
       list-style-position: inside;
       list-style-type: round;
