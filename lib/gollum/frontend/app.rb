@@ -332,6 +332,7 @@ module Precious
         raw_data = page.raw_data
         @content = raw_data.respond_to?(:force_encoding) ? raw_data.force_encoding('UTF-8') : raw_data
         @livewritingActions = replayActions
+        @livewriting_flag = true
         mustache :edit
       else
         redirect to("/"+params[:repo]+"/create/#{encodeURIComponent(@name)}")
