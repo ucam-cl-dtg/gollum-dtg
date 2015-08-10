@@ -315,6 +315,32 @@ module Precious
 
     post '/:repo/edit/*' do
     protected!(params[:repo], params[:splat].first, 'W')
+
+   
+    get '/:repo/replay/*/*' do
+      wikip = wiki_page(params[:repo], params[:splat].first)
+      @name = wikip.name
+      @path = wikip.path
+      wiki = wikip.wiki
+      file = File.open(params[:repo] + "_" + params[:splat][1] + ".json", "r")
+      replayActions = file.read
+      
+      if page = wikip.page
+        @page = page
+        @page.version = wiki.repo.log(wiki.ref, @page.path).first
+        @repo = params[:repo]
+        raw_data = page.raw_data
+        @content = raw_data.respond_to?(:force_encoding) ? raw_data.force_encoding('UTF-8') : raw_data
+        @livewritingActions = replayActions
+        mustache :edit
+      else
+        redirect to("/"+params[:repo]+"/create/#{encodeURIComponent(@name)}")
+      end
+    end
+
+    
+
+    post '/edit/*' do
       path      = '/' + clean_url(sanitize_empty_params(params[:path])).to_s
       page_name = CGI.unescape(params[:page])
       opt       = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
@@ -326,11 +352,16 @@ module Precious
       committer = Gollum::Committer.new(wiki, commit_message)
       commit    = {:committer => committer}
 
+      
+
       update_wiki_page(wiki, page, params[:content], commit, name, params[:format])
       update_wiki_page(wiki, page.header,  params[:header],  commit) if params[:header]
       update_wiki_page(wiki, page.footer,  params[:footer],  commit) if params[:footer]
       update_wiki_page(wiki, page.sidebar, params[:sidebar], commit) if params[:sidebar]
-      committer.commit
+      version = committer.commit
+      File.open(params[:repo] + "_" + version + ".json", "w") do |file|
+        file.write params[:livewritingActions]
+      end
 
       page = wiki.page(rename) if rename
 
@@ -377,12 +408,16 @@ module Precious
 
       page_dir = File.join(page_dir, path)
 
+      
       # write_page is not directory aware so use wiki_options to emulate dir support.
       wiki_options = settings.wiki_options.merge({ :base_path=>File.join(@base_url,params[:repo]), :page_file_dir => page_dir })
       wiki         = Gollum::Wiki.new(File.join(settings.repos_path,settings.wiki_repos_pattern,params[:repo] + '.git'), wiki_options)
 
       begin
-        wiki.write_page(name, format, params[:content], commit_message)
+        version = wiki.write_page(name, format, params[:content], commit_message)
+        File.open(version + ".json", "w") do |file|
+          file.write params[:livewritingActions]
+        end
         redirect to("/"+params[:repo]+"/#{clean_url(CGI.escape(::File.join(page_dir,name)))}")
       rescue Gollum::DuplicatePageError => e
         @repo = params[:repo]
