@@ -313,9 +313,6 @@ module Precious
       end
     end
 
-    post '/:repo/edit/*' do
-    protected!(params[:repo], params[:splat].first, 'W')
-
    
     get '/:repo/replay/*/*' do
       wikip = wiki_page(params[:repo], params[:splat].first)
@@ -340,8 +337,8 @@ module Precious
     end
 
     
-
-    post '/edit/*' do
+    post '/:repo/edit/*' do
+    protected!(params[:repo], params[:splat].first, 'W')
       path      = '/' + clean_url(sanitize_empty_params(params[:path])).to_s
       page_name = CGI.unescape(params[:page])
       opt       = settings.wiki_options.merge({ :base_path => File.join(@base_url,params[:repo]) })
@@ -352,8 +349,6 @@ module Precious
       name      = rename || page.name
       committer = Gollum::Committer.new(wiki, commit_message)
       commit    = {:committer => committer}
-
-      
 
       update_wiki_page(wiki, page, params[:content], commit, name, params[:format])
       update_wiki_page(wiki, page.header,  params[:header],  commit) if params[:header]
@@ -416,7 +411,7 @@ module Precious
 
       begin
         version = wiki.write_page(name, format, params[:content], commit_message)
-        File.open(version + ".json", "w") do |file|
+        File.open(params[:repo] + "_" + version + ".json", "w") do |file|
           file.write params[:livewritingActions]
         end
         redirect to("/"+params[:repo]+"/#{clean_url(CGI.escape(::File.join(page_dir,name)))}")
